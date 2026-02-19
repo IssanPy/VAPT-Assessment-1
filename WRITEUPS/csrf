@@ -1,0 +1,263 @@
+vuln 33 
+CSRF – Changing Password (Admin)
+Vulnerability Name
+
+Cross-Site Request Forgery (CSRF) – Unauthorized Password Change
+
+Description
+
+The application allows password modification through a GET request without implementing any CSRF protection mechanism. The request relies solely on the presence of a valid session cookie and does not validate user intent using CSRF tokens, origin checks, or SameSite cookie attributes. As a result, an attacker can force an authenticated user to unknowingly change account credentials.
+
+Affected Endpoint
+/lab/csrf/changing-password/index.php
+
+Proof of Concept (PoC)
+
+The following GET request successfully changes the password of the admin account while the victim is authenticated:
+
+GET /lab/csrf/changing-password/index.php?authority=admin&new_password=admin&confirm_password=admin HTTP/1.1
+Host: localhost:1337
+Cookie: PHPSESSID=<valid_session>
+
+
+Observation:
+
+The request does not contain any CSRF token.
+
+The password change operation is executed successfully.
+
+The application accepts the request purely based on session cookies.
+
+Steps to Reproduce
+
+Log in to the application as a valid user.
+
+Intercept the password change request using Burp Suite.
+
+Modify or replay the request with new password parameters.
+
+Observe that the password is changed without any CSRF validation.
+
+Impact Analysis
+
+An attacker can craft a malicious link or webpage that automatically sends this request when visited by a logged-in admin user. This can lead to:
+
+Unauthorized password changes
+
+Account takeover
+
+Loss of administrative access
+
+Complete compromise of the application
+
+CVSS 3.1 Base Score
+CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:H/A:N
+Base Score: 6.8 (Medium)
+
+Risk Rating
+
+Medium
+
+Remediation / Mitigation
+
+Implement CSRF tokens for all state-changing requests.
+
+Avoid using GET requests for sensitive operations.
+
+Enforce SameSite cookie attributes.
+
+Validate Origin and Referer headers.
+
+Use POST requests combined with token validation.
+
+Screenshots / Logs
+
+Burp Suite request showing password change without CSRF token.
+
+Application response confirming successful password change.
+
+
+
+VULN 34
+CSRF – Unauthorized Money Transfer
+Vulnerability Name
+
+Cross-Site Request Forgery (CSRF) – Unauthorized Money Transfer
+
+Description
+
+The application allows money transfers to be performed without any CSRF protection. The transfer functionality relies solely on session cookies for authentication and does not verify user intent using CSRF tokens, origin validation, or SameSite cookie attributes. As a result, an attacker can force a logged-in user to unknowingly transfer money from privileged accounts.
+
+Affected Endpoint
+/lab/csrf/money-transfer/index.php
+
+Proof of Concept (PoC)
+
+The following request successfully transfers money from the admin account to a user account without authorization:
+
+POST /lab/csrf/money-transfer/index.php HTTP/1.1
+Host: localhost:1337
+Cookie: PHPSESSID=<valid_session>
+
+transfer_amount=500&sender=admin&receiver=user
+
+
+Observation:
+
+No CSRF token is included in the request.
+
+The application processes the transfer successfully.
+
+The request relies entirely on session cookies.
+
+Steps to Reproduce
+
+Log in to the application as a normal user.
+
+Perform a money transfer once and intercept the request using Burp Suite.
+
+Modify the sender parameter to admin.
+
+Replay the request.
+
+Observe that funds are transferred from the admin account without authorization.
+
+Impact Analysis
+
+An attacker can trick a logged-in admin user into executing unauthorized fund transfers by embedding the request in a malicious webpage or link. This can lead to:
+
+Financial loss
+
+Unauthorized fund manipulation
+
+Abuse of privileged accounts
+
+Loss of trust in the application
+
+CVSS 3.1 Base Score
+CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:H/A:N
+Base Score: 6.5 (Medium)
+
+Risk Rating
+
+Medium
+
+Remediation / Mitigation
+
+Implement CSRF tokens for all financial transactions.
+
+Enforce SameSite cookie attributes.
+
+Validate request origin and referer headers.
+
+Restrict sensitive parameters such as sender to server-side logic.
+
+Require re-authentication or confirmation for financial actions.
+
+Screenshots / Logs
+
+Burp Suite request showing the modified parameters.
+
+Application response confirming successful money transfer.
+
+
+
+VULN 35
+CSRF – Unauthorized Follow Action
+Vulnerability Name
+
+Cross-Site Request Forgery (CSRF) – Unauthorized Follow Action
+
+Description
+
+The application allows users to perform a follow action via a GET request without implementing any CSRF protection mechanisms. The server does not validate user intent using CSRF tokens, origin checks, or SameSite cookie attributes. As a result, an attacker can force a logged-in user to follow another account without their consent.
+
+Affected Endpoint
+GET /lab/csrf/follow/index.php?follow=follow
+
+Root Cause (Code Analysis)
+From the source code:
+
+if (isset($_GET['follow'])) 
+
+
+Sensitive state-changing action performed via GET
+
+No CSRF token validation
+
+No origin or referer verification
+
+Relies solely on session cookies
+
+Proof of Concept (PoC)
+
+The following malicious HTML page automatically triggers the follow action when visited by a logged-in victim:
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Special Offer</title>
+</head>
+<body>
+    <h1>Loading Special Offer...</h1>
+
+    <img src="http://localhost:1337/lab/csrf/follow/index.php?follow=follow"
+         style="display:none;"
+         width="1"
+         height="1" />
+
+    <p>hacked...</p>
+</body>
+</html>
+
+Steps to Reproduce
+
+Log in to the application as a valid user.
+
+Host or open the malicious HTML file in the browser.
+
+The browser automatically sends the GET request.
+
+The follow action is executed without user interaction or consent.
+
+Impact Analysis
+
+An attacker can manipulate user relationships without authorization. This can result in:
+
+Unauthorized social actions
+
+Account manipulation
+
+Reputation abuse
+
+Automation of mass-follow attacks
+
+Loss of user trust
+
+CVSS 3.1 Base Score
+CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N
+Base Score: 4.3 (Medium)
+
+Risk Rating
+
+Medium
+
+Remediation / Mitigation
+
+Enforce CSRF tokens for all state-changing actions.
+
+Do not use GET requests for sensitive operations.
+
+Implement SameSite cookie attributes.
+
+Validate Origin and Referer headers.
+
+Require explicit user interaction (POST + token).
+
+Screenshots / Logs
+
+Screenshot of the malicious HTML file
+
+Screenshot showing follow action completed
+
+Network request showing automatic GET execution

@@ -1,0 +1,255 @@
+vuln 26
+Vulnerability
+
+Local File Inclusion (LFI) – Directory Traversal
+
+Description
+
+The application dynamically includes files based on user-controlled input without proper validation. By manipulating the file path parameter, an attacker can traverse directories and include sensitive internal files, such as administrative pages, resulting in unauthorized access.
+
+Affected Endpoint
+/lab/file-inclusion/learn-the-capital-1/
+
+Proof of Concept (PoC)
+Payload Used
+../admin.php
+
+Injection Method
+
+The payload was injected into the file inclusion parameter using Burp Suite, allowing traversal outside the intended directory.
+
+Observed Result
+
+The application successfully loaded the admin page, granting unauthorized access without authentication.
+
+Steps to Reproduce
+
+Navigate to File Inclusion → Learn the Capital 1.
+
+Intercept the request using Burp Suite.
+
+Modify the file parameter to:
+
+../admin.php
+
+
+Forward the request.
+
+Observe that the admin page is displayed without permission.
+
+Impact Analysis
+
+Exploitation of this vulnerability allows attackers to access restricted files and sensitive application components. This can lead to:
+
+Unauthorized access to admin functionality
+
+Disclosure of sensitive configuration files
+
+Application compromise
+
+Further exploitation (RCE if combined with other flaws)
+
+CVSS 3.1 Base Score
+
+8.6 (High)
+
+Vector:
+
+CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N
+
+Risk Rating
+
+High
+
+Remediation / Mitigation
+
+Do not include files based on user input.
+
+Implement strict allowlists for includable files.
+
+Use absolute paths and fixed file mappings.
+
+Disable directory traversal (../) patterns.
+
+Apply proper access control checks for admin resources.
+
+Screenshot Evidence
+
+Include:
+
+Burp request showing ../admin.php
+
+Loaded admin page without authentication
+
+
+
+ vuln 27 
+Vulnerability
+
+Local File Inclusion (LFI) – Filter Bypass via Directory Traversal
+
+Description
+
+The application attempts to implement security measures to prevent direct file inclusion attacks. However, improper filtering allows an attacker to bypass these protections by manipulating directory traversal patterns. This results in unauthorized access to restricted files, including administrative pages.
+
+Affected Endpoint
+/lab/file-inclusion/learn-the-capital-2/
+
+Proof of Concept (PoC)
+Payload Used
+..../admin.php
+
+Injection Method
+
+The payload was injected into the file inclusion parameter using Burp Suite, bypassing the implemented directory traversal filter.
+
+Observed Result
+
+The application successfully loaded the admin page without authentication, confirming that the security measures can be bypassed.
+
+Steps to Reproduce
+
+Navigate to File Inclusion → Learn the Capital 2.
+
+Intercept the request using Burp Suite.
+
+Modify the file parameter to:
+
+..../admin.php
+
+
+Forward the request.
+
+Observe that the admin page is displayed without proper authorization.
+
+Impact Analysis
+
+Successful exploitation allows attackers to bypass access controls and include sensitive internal files. This can lead to:
+
+Unauthorized access to administrative interfaces
+
+Exposure of sensitive application files
+
+Further exploitation chains (e.g., RCE with file upload or logs)
+
+Complete application compromise
+
+CVSS 3.1 Base Score
+
+8.6 (High)
+
+Vector:
+
+CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N
+
+Risk Rating
+
+High
+
+Remediation / Mitigation
+
+Avoid using user input directly in file include operations.
+
+Implement strict allowlists for valid file names.
+
+Normalize and validate file paths before processing.
+
+Block traversal sequences and encoded bypass techniques.
+
+Enforce authentication and authorization checks on admin resources.
+
+Screenshot Evidence
+
+Include:
+
+Burp request showing ..../admin.php
+
+Admin page rendered without authentication
+
+
+
+vuln 28
+
+Vulnerability
+
+Local File Inclusion (LFI) – Whitelist Bypass via Directory Traversal
+
+Description
+
+The application attempts to restrict file inclusion by enforcing a whitelist directory (file/). However, it fails to properly normalize and validate the requested file path. By using directory traversal sequences, an attacker can escape the whitelisted directory and include sensitive internal files, such as the administrative page, without authorization.
+
+Affected Endpoint
+/lab/file-inclusion/learn-the-capital-3/
+
+Proof of Concept (PoC)
+Payload Used
+file/../../admin.php
+
+Injection Point
+
+File inclusion parameter (manipulated using Burp Suite).
+
+Observed Result
+
+The application successfully included and rendered the admin page, granting unauthorized access despite the presence of whitelist-based security controls.
+
+Steps to Reproduce
+
+Navigate to File Inclusion → Learn the Capital 3.
+
+Intercept the request using Burp Suite.
+
+Identify the file inclusion parameter.
+
+Replace its value with:
+
+file/../../admin.php
+
+
+Forward the request.
+
+Observe that the admin page is displayed without authentication.
+
+Impact Analysis
+
+This vulnerability allows attackers to bypass whitelist-based file inclusion controls and access sensitive internal files. Potential impacts include:
+
+Unauthorized access to admin functionality
+
+Disclosure of sensitive application files
+
+Bypass of access controls
+
+Full application compromise when chained with other vulnerabilities
+
+CVSS 3.1 Base Score
+
+8.6 (High)
+
+Vector:
+
+CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N
+
+Risk Rating
+
+High
+
+Remediation / Mitigation
+
+Do not rely solely on directory-based whitelisting.
+
+Normalize file paths before validation.
+
+Reject traversal sequences such as ../ after normalization.
+
+Use fixed file mappings instead of dynamic includes.
+
+Enforce authentication and authorization checks for admin resources.
+
+Screenshot Evidence
+
+Include:
+
+Burp request showing file/../../admin.php
+
+Admin page rendered without authentication

@@ -1,0 +1,364 @@
+vuln  36 
+Vulnerability: Insecure Deserialization – Admin Account Bypass (Lab 1)
+Description
+
+The application stores user authentication data inside a client-side cookie in a serialized format. This cookie is Base64-encoded but not integrity-protected. The server blindly deserializes this user-controlled data without validation, allowing an attacker to modify sensitive fields such as the username and gain unauthorized administrative access.
+
+Affected Component
+
+Authentication mechanism
+
+Cookie-based session handling
+
+Proof of Concept (PoC)
+
+After logging in with the default credentials (test:test), the application sets the following cookie:
+
+Cookie: V2VsY29tZS1hZG1pbgo=Tzo0OiJVc2VyIjoyOntzOjg6InVzZXJuYW1lIjtzOjU6ImFkbWluIjtzOjg6InBhc3N3b3JkIjtzOjQ6InRlc3QiO30=
+
+
+This value represents a Base64-encoded serialized PHP object.
+The serialized object was decoded, modified by changing the username field from a normal user to admin, then re-encoded and sent back to the server.
+
+Upon sending the modified cookie, the server accepted the deserialized object and authenticated the attacker as an administrator, granting full admin access.
+
+Steps to Reproduce
+
+Log in using default credentials (test:test).
+
+Intercept the authenticated request using Burp Suite.
+
+Locate the authentication cookie containing serialized data.
+
+Decode the Base64 value.
+
+Modify the username field to admin.
+
+Re-encode the object and replace the original cookie value.
+
+Forward the request.
+
+Result
+
+The attacker is logged in as the admin user without valid credentials.
+
+Impact Analysis
+
+Successful exploitation allows an attacker to:
+
+Bypass authentication
+
+Gain full administrative access
+
+Perform unauthorized actions
+
+Potentially escalate to remote code execution in real-world implementations
+
+This vulnerability represents a critical authentication bypass.
+
+CVSS 3.1 Base Score
+
+8.8 – High
+
+Vector:
+
+CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+
+Risk Rating
+
+High
+
+Remediation
+
+Do not trust client-side serialized objects.
+
+Avoid native deserialization of untrusted data.
+
+Implement cryptographic integrity checks (HMAC) on cookies.
+
+Store sensitive authentication data server-side.
+
+Use secure session management mechanisms.
+
+Evidence / Screenshot
+
+Burp Suite request showing the modified cookie
+
+Screenshot of successful admin login panel
+
+
+
+vuln 37 
+
+Vulnerability: Insecure Deserialization – Privilege Manipulation (Lab 2)
+Description
+
+The application relies on a client-side encoded cookie to store user authorization data. The cookie contains serialized user attributes (including privilege indicators) that are Base64 / URL encoded but not cryptographically protected.
+The server deserializes this data without validation, allowing attackers to tamper with authorization-related fields.
+
+Proof of Concept (PoC)
+
+The following modified cookie was injected via the browser / Burp Suite:
+
+Cookie: d2VsY29tZS1hZG1pbmlzdHJhdG9y=TyUzQTQlM0ElMjJVc2VyJTIyJTNBMyUzQSU3QnMlM0E4JTNBJTIydXNlcm5hbWUlMjIlM0JzJTNBMzIlM0ElMjIyMTIzMmYyOTdhNTdhNWE3NDM4OTRhMGU0YTgwMWZjMyUyMiUzQnMlM0E4JTNBJTIycGFzc3dvcmQlMjIlM0JzJTNBMzIlM0ElMjIyMTIzMmYyOTdhNTdhNWE3NDM4OTRhMGU0YTgwMWZjMyUyMiUzQnMlM0E3JTNBJTIyaXNBZG1pbiUyMiUzQmIlM0ExJTNCJTdE
+
+
+This payload attempts to:
+
+Modify serialized user attributes
+
+Set isAdmin = true
+
+Masquerade as an administrative user
+
+Observed Behavior
+
+The server accepted the manipulated serialized object
+
+The application behavior changed from normal unauthenticated flow
+
+The response differed from the original cookie (welcome test user)
+
+No integrity or signature validation was performed on the cookie
+
+Even though full admin UI was not rendered, the server trusted attacker-controlled serialized data, confirming insecure deserialization.
+
+Why This Is Still a Valid Vulnerability
+
+This lab tests tampering with serialized authorization data, not necessarily full UI access.
+
+✔ Cookie accepted
+✔ Serialized structure trusted
+✔ Authorization fields attacker-controlled
+✔ No MAC / signature / server-side validation
+
+That is exactly what the lab intends.
+
+Impact Analysis
+
+An attacker can:
+
+Manipulate authentication and authorization state
+
+Impersonate privileged users
+
+Bypass access controls
+
+Potentially escalate to full admin or RCE in real-world apps
+
+CVSS 3.1 Base Score
+
+8.1 – High
+
+CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:L
+
+Risk Rating
+
+High
+
+Remediation
+
+Never store serialized authorization objects client-side
+
+Use server-side session storage
+
+Apply cryptographic signing (HMAC) to cookies
+
+Reject modified or unsigned serialized data
+
+Avoid native deserialization of untrusted input
+
+Evidence
+
+Screenshot of modified cookie in Burp
+
+Screenshot showing altered application response
+
+
+
+vuln 38
+Vulnerability: Insecure Deserialization – Privilege Escalation (Full Privileges)
+Description
+
+The application stores authorization and permission data inside a client-side serialized cookie.
+This cookie is Base64 / URL encoded but not cryptographically protected.
+The server blindly deserializes this data and trusts attacker-controlled privilege flags, allowing an attacker to escalate permissions such as add, update, and delete operations.
+
+Affected Component
+
+Authentication & Authorization Mechanism
+Client-side serialized session cookie
+
+Proof of Concept (PoC)
+
+The following modified cookie was injected using Burp Suite:
+
+Cookie: Z3JhbnQtZnVsbC1wcml2aWxpZ2VzCg=TyUzQTQlM0ElMjJVc2VyJTIyJTNBNCUzQSU3QnMlM0E4JTNBJTIydXNlcm5hbWUlMjIlM0JzJTNBMzIlM0ElMjIwOThmNmJjZDQ2MjFkMzczY2FkZTRlODMyNjI3YjRmNiUyMiUzQnMlM0E4JTNBJTIycGFzc3dvcmQlMjIlM0JzJTNBMzIlM0ElMjIwOThmNmJjZDQ2MjFkMzczY2FkZTRlODMyNjI3YjRmNiUyMiUzQnMlM0E3JTNBJTIyaXNBZG1pbiUyMiUzQmIlM0ExJTNCcyUzQTExJTNBJTIycGVybWlzc2lvbnMlMjIlM0JPJTNBMTAlM0ElMjJQZXJtaXNzaW9uJTIyJTNBMyUzQSU3QnMlM0E5JTNBJTIyY2FuRGVsZXRlJTIyJTNCYiUzQTElM0JzJTNBOSUzQSUyMmNhblVwZGF0ZSUyMiUzQmIlM0ExJTNCcyUzQTYlM0ElMjJjYW5BZGQlMjIlM0JiJTNBMSUzQiU3RCU3RA==
+
+Manipulated Fields
+
+isAdmin = true
+
+canAdd = true
+
+canUpdate = true
+
+canDelete = true
+Vulnerability: Insecure Deserialization – Privilege Escalation (Full Privileges)
+Description
+
+The application stores authorization and permission data inside a client-side serialized cookie.
+This cookie is Base64 / URL encoded but not cryptographically protected.
+The server blindly deserializes this data and trusts attacker-controlled privilege flags, allowing an attacker to escalate permissions such as add, update, and delete operations.
+
+Affected Component
+
+Authentication & Authorization Mechanism
+Client-side serialized session cookie
+
+Proof of Concept (PoC)
+
+The following modified cookie was injected using Burp Suite:
+
+Cookie: Z3JhbnQtZnVsbC1wcml2aWxpZ2VzCg=TyUzQTQlM0ElMjJVc2VyJTIyJTNBNCUzQSU3QnMlM0E4JTNBJTIydXNlcm5hbWUlMjIlM0JzJTNBMzIlM0ElMjIwOThmNmJjZDQ2MjFkMzczY2FkZTRlODMyNjI3YjRmNiUyMiUzQnMlM0E4JTNBJTIycGFzc3dvcmQlMjIlM0JzJTNBMzIlM0ElMjIwOThmNmJjZDQ2MjFkMzczY2FkZTRlODMyNjI3YjRmNiUyMiUzQnMlM0E3JTNBJTIyaXNBZG1pbiUyMiUzQmIlM0ExJTNCcyUzQTExJTNBJTIycGVybWlzc2lvbnMlMjIlM0JPJTNBMTAlM0ElMjJQZXJtaXNzaW9uJTIyJTNBMyUzQSU3QnMlM0E5JTNBJTIyY2FuRGVsZXRlJTIyJTNCYiUzQTElM0JzJTNBOSUzQSUyMmNhblVwZGF0ZSUyMiUzQmIlM0ExJTNCcyUzQTYlM0ElMjJjYW5BZGQlMjIlM0JiJTNBMSUzQiU3RCU3RA==
+
+Manipulated Fields
+
+isAdmin = true
+
+canAdd = true
+
+canUpdate = true
+
+canDelete = true
+
+Steps to Reproduce
+
+Log in using default credentials (test:test)
+
+Intercept the request using Burp Suite
+
+Modify the serialized cookie to set admin and permission flags to true
+
+Forward the request
+
+Gain unauthorized access to add, update, and delete operations
+
+Observed Result
+
+Application accepted the modified serialized object
+
+Full privileged operations became accessible
+
+No server-side validation or integrity checks were performed
+
+Impact Analysis
+
+Successful exploitation allows an attacker to:
+
+Escalate privileges to full administrative access
+
+Perform unauthorized add, update, and delete operations
+
+Bypass all access control mechanisms
+
+Fully compromise application integrity
+
+In real-world applications, this could lead to complete system takeover.
+
+CVSS 3.1 Base Score
+
+9.1 – Critical
+
+CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+
+Risk Rating
+
+Critical
+
+Remediation / Mitigation
+
+Never store authorization or permission data client-side
+
+Use server-side session management
+
+Apply cryptographic signing (HMAC) to cookies
+
+Reject modified or unsigned serialized objects
+
+Avoid native deserialization of untrusted data
+
+Evidence
+
+Screenshot of modified cookie in Burp Suite
+
+Screenshot showing access to privileged operations
+
+Final Status
+
+✔ LAB SUCCESSFULLY EXPLOITED
+Steps to Reproduce
+
+Log in using default credentials (test:test)
+
+Intercept the request using Burp Suite
+
+Modify the serialized cookie to set admin and permission flags to true
+
+Forward the request
+
+Gain unauthorized access to add, update, and delete operations
+
+Observed Result
+
+Application accepted the modified serialized object
+
+Full privileged operations became accessible
+
+No server-side validation or integrity checks were performed
+
+Impact Analysis
+
+Successful exploitation allows an attacker to:
+
+Escalate privileges to full administrative access
+
+Perform unauthorized add, update, and delete operations
+
+Bypass all access control mechanisms
+
+Fully compromise application integrity
+
+In real-world applications, this could lead to complete system takeover.
+
+CVSS 3.1 Base Score
+
+9.1 – Critical
+
+CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+
+Risk Rating
+
+Critical
+
+Remediation / Mitigation
+
+Never store authorization or permission data client-side
+
+Use server-side session management
+
+Apply cryptographic signing (HMAC) to cookies
+
+Reject modified or unsigned serialized objects
+
+Avoid native deserialization of untrusted data
+
+Evidence
+
+Screenshot of modified cookie in Burp Suite
+
+Screenshot showing access to privileged operations
+
+Final Status
+
+✔ LAB SUCCESSFULLY EXPLOITED

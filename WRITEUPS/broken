@@ -1,0 +1,263 @@
+vuln 41 
+Vulnerability Name
+
+Broken Authentication – Brute Force Attack
+
+Description
+
+The application does not implement protections against automated login attempts. An attacker can repeatedly submit authentication requests without any rate limiting, account lockout, CAPTCHA, or monitoring. This allows an attacker to brute-force user credentials and gain unauthorized access.
+
+Affected Component
+
+Admin login functionality
+
+Proof of Concept (PoC)
+
+Username: admin
+
+Attack Method: Brute-force using Burp Suite Intruder
+
+Wordlist Used: 10k-most-common.txt (SecLists)
+
+Successful Password Found: lifehack
+
+Steps to Reproduce
+
+Intercept the admin login request using Burp Suite.
+
+Send the request to Intruder.
+
+Keep the username fixed as admin.
+
+Set the password parameter as the payload position.
+
+Load the 10k-most-common.txt wordlist.
+
+Start the attack.
+
+Observe a successful response when the password lifehack is used.
+
+Impact Analysis
+
+Successful exploitation allows an attacker to:
+
+Gain unauthorized access to the admin account
+
+Perform privileged actions
+
+Access or modify sensitive data
+
+Potentially take full control of the application
+
+This vulnerability can lead to complete account compromise.
+
+CVSS 3.1 Base Score
+
+8.2 – High
+
+Vector:
+
+CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N
+
+Risk Rating
+
+High
+
+Remediation / Mitigation
+
+Implement rate limiting on login attempts
+
+Enforce account lockout after multiple failed attempts
+
+Use CAPTCHA after failed logins
+
+Enforce strong password policies
+
+Monitor and log failed authentication attempts
+
+Implement multi-factor authentication (MFA)
+
+Evidence
+
+Screenshot of Burp Intruder attack showing successful login with password lifehack
+
+HTTP response indicating successful authentication
+
+
+
+vuln 42
+Vulnerability Name
+
+Broken Authentication – Execution After Redirect (No Redirect)
+
+Description
+
+The application performs an authorization check and issues a redirect (HTTP 302) to the login page for unauthenticated users. However, the server continues executing the request after sending the redirect, returning the protected page content in the same response. By manipulating the HTTP response, an attacker can suppress the redirect and access restricted content without authentication.
+
+Affected Component
+
+Admin panel authorization logic (index.php)
+
+Proof of Concept (PoC)
+Steps to Reproduce
+
+Navigate directly to the admin panel URL:
+
+http://localhost:1337/lab/broken-authentication/no-redirect/index.php
+
+
+Enable Burp Suite → Proxy → Intercept (ON) and refresh the page.
+
+Right-click the intercepted request and select Do intercept → Response to this request.
+
+When the server response appears:
+
+Change the status line from:
+
+HTTP/1.1 302 Found
+
+
+to:
+
+HTTP/1.1 200 OK
+
+
+Remove the header:
+
+Location: login.php
+
+
+Forward the response to the browser.
+
+Result
+
+The browser renders the admin dashboard (SVPanel) without any login, confirming an authentication bypass.
+
+Impact Analysis
+
+An attacker can:
+
+Bypass authentication entirely
+
+Access administrative functionality
+
+Perform privileged actions without credentials
+
+Compromise application integrity and sensitive data
+
+This results in full authorization bypass.
+
+CVSS 3.1 Base Score
+
+8.8 – High
+
+Vector:
+
+CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N
+
+Risk Rating
+
+High
+
+Remediation / Mitigation
+
+Immediately terminate execution after redirects (e.g., exit; / return;)
+
+Enforce server-side authorization checks before rendering protected content
+
+Use centralized access control middleware
+
+Add automated tests for unauthorized access paths
+
+Evidence
+
+Burp Suite screenshot showing modified response (302 → 200, Location header removed)
+
+Browser screenshot displaying the admin dashboard without authentication
+
+
+VULN 43
+Vulnerability Name
+
+Broken Authentication – Two-Factor Authentication (2FA) Brute Force
+
+Description
+
+The application implements a 2-factor authentication mechanism using a server-generated numeric verification code. However, the OTP implementation lacks essential security controls such as rate limiting, attempt counters, account lockout, and CAPTCHA protections.
+
+The verification code is generated using a predictable numeric range, allowing an attacker to systematically brute-force the OTP and gain unauthorized access to the admin account.
+
+Affected Component
+
+2FA verification endpoint (OTP validation logic)
+
+Proof of Concept (PoC)
+Observation
+
+The application accepts a 5-digit numeric OTP
+
+No rate limiting or delay is enforced between attempts
+
+Unlimited verification attempts are allowed per session
+
+Invalid OTP submissions return consistent responses
+
+Exploitation Evidence
+
+OTP verification requests were intercepted and replayed using Burp Suite
+
+Burp Intruder was configured to test the full numeric range
+
+The application did not block, delay, or lock the account during the attack
+
+This confirms that the OTP can be brute-forced within a short time window
+
+(Screenshot evidence: Burp Intruder attack running against the OTP parameter)
+
+Impact Analysis
+
+An attacker can:
+
+Bypass 2FA protection entirely
+
+Gain unauthorized access to the admin account
+
+Escalate privileges without valid OTP ownership
+
+Fully compromise application security
+
+This completely defeats the purpose of two-factor authentication.
+
+CVSS 3.1 Base Score
+
+8.6 – High
+
+Vector:
+
+CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N
+
+Risk Rating
+
+High
+
+Remediation / Mitigation
+
+Implement strict rate limiting on OTP verification
+
+Enforce account lockout after failed attempts
+
+Add exponential backoff delays between attempts
+
+Use cryptographically secure OTP generators
+
+Bind OTP attempts to user identity and IP
+
+Implement CAPTCHA after multiple failures
+
+Log and alert on OTP abuse attempts
+
+Evidence
+
+Burp Suite Intruder screenshot showing OTP brute-force attempts
+
+HTTP request showing repeated OTP submissions without blocking

@@ -1,0 +1,502 @@
+VULN 14 IDOR 
+Vulnerability Name
+
+Insecure Direct Object Reference (IDOR) – Unauthorized Invoice Access
+
+Description
+
+The application allows users to access invoice objects by directly specifying an identifier in the view parameter. The server does not validate whether the requested invoice belongs to the authenticated user. By modifying this parameter, an attacker can access invoices of other users without authorization.
+
+Affected Endpoint
+POST /lab/idor/invoices/
+
+Proof of Concept (PoC)
+Request Modification
+
+Original request:
+
+view=1
+
+
+Modified request:
+
+view=2
+
+Result
+
+The server returned invoice details belonging to another user, confirming unauthorized access.
+
+Steps to Reproduce
+
+Login as a normal user.
+
+Navigate to the Invoices page.
+
+Intercept the request using Burp Suite and send it to Repeater.
+
+Modify the view parameter to another numeric value.
+
+Send the request.
+
+Observe invoice data belonging to a different user.
+
+Impact Analysis
+
+An attacker can:
+
+Access other users’ financial invoices
+
+Leak sensitive billing information
+
+Violate user privacy
+
+Enable financial fraud and compliance violations
+
+CVSS 3.1 Base Score
+
+8.1 – High
+
+CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N
+
+Risk Rating
+
+High
+
+Remediation
+
+Enforce server-side authorization checks for every object request
+
+Validate that the authenticated user owns the requested invoice
+
+Avoid exposing direct object identifiers
+
+Use indirect references (UUIDs or hashed IDs)
+
+Evidence
+
+Burp Repeater screenshot showing modified view parameter
+
+Server response displaying another user’s invoice
+
+
+
+vuln 15
+Vulnerability Name
+
+Insecure Direct Object Reference (IDOR) – Ticket Price Manipulation
+
+Description
+
+The application trusts client-side parameters for ticket pricing. By modifying the ticket_money parameter in the purchase request, a user can buy tickets for less than the fixed server-defined price. The server fails to validate the price against authoritative values, resulting in an IDOR/business logic flaw.
+
+Affected Endpoint
+POST /lab/idor/ticket-sales/index.php
+
+Proof of Concept (PoC)
+Original Request
+amount=2&ticket_money=10
+
+Modified Request
+amount=2&ticket_money=5
+
+Result
+
+The purchase succeeds and the total charged reflects the manipulated (lower) price, allowing tickets to be bought below the regular price.
+
+Steps to Reproduce
+
+Login as a normal user and navigate to Ticket Sales.
+
+Initiate a ticket purchase and intercept the request with Burp Suite.
+
+Send the request to Repeater.
+
+Modify ticket_money to a lower value.
+
+Send the request and observe a successful purchase at the reduced price.
+
+Impact Analysis
+
+An attacker can:
+
+Purchase tickets at arbitrary prices
+
+Cause financial loss to the application
+
+Bypass pricing controls and business rules
+
+CVSS 3.1 Base Score
+
+8.1 – High
+
+CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N
+
+Risk Rating
+
+High
+
+Remediation
+
+Enforce server-side price calculation (do not trust client input)
+
+Validate ticket prices against server-stored values
+
+Ignore or remove client-supplied price fields
+
+Implement integrity checks for purchase requests
+
+Evidence
+
+Burp Repeater screenshot showing modified ticket_money
+
+Server response confirming successful purchase at reduced price
+
+
+
+
+vuln 16 
+Vulnerability Name
+
+Insecure Direct Object Reference (IDOR) – Unauthorized Password Change
+
+Description
+
+The application allows a logged-in user to change a password by referencing a user identifier provided by the client. The server does not verify that the authenticated user is authorized to modify the specified account. By altering the user_id parameter, an attacker can change another user’s password without permission.
+
+Affected Endpoint
+POST /lab/idor/changing-password/index.php
+
+Proof of Concept (PoC)
+Observed Request (modified)
+password=test&user_id=2
+
+Result
+
+The server confirms the password change for a different user (“Pierre”), demonstrating unauthorized account modification.
+
+Steps to Reproduce
+
+Authenticate as a normal user.
+
+Submit a password change request.
+
+Modify the user_id parameter to reference another user.
+
+Send the request.
+
+Observe a success message indicating another user’s password was changed.
+
+Impact Analysis
+
+An attacker can:
+
+Take over other user accounts
+
+Lock legitimate users out of their accounts
+
+Escalate privileges and access sensitive data
+
+CVSS 3.1 Base Score
+
+8.1 – High
+
+CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N
+
+Risk Rating
+
+High
+
+Remediation
+
+Enforce server-side authorization checks for password changes
+
+Ensure the authenticated user can modify only their own account
+
+Avoid trusting client-supplied user identifiers
+
+Use indirect references and validate ownership on every request
+
+Evidence
+
+Burp Repeater screenshot showing modified user_id
+
+Server response confirming another user’s password change
+
+
+
+VULN17
+Vulnerability Name
+
+Insecure Direct Object Reference (IDOR) – Unauthorized Money Transfer
+
+Description
+
+The application relies on client-supplied identifiers to determine the source and destination of a money transfer. By modifying the sender_id and recipient_id parameters, a user can transfer funds from another user’s account without authorization. The server fails to verify ownership of the source account.
+
+Affected Endpoint
+POST /lab/idor/money-transfer/
+
+Proof of Concept (PoC)
+Modified Request
+transfer_amount=100&recipient_id=2&sender_id=1
+
+Result
+
+The transfer succeeds even though the authenticated user is not the owner of sender_id=1, confirming unauthorized fund transfer.
+
+Steps to Reproduce
+
+Login as a normal user.
+
+Initiate a money transfer and intercept the request.
+
+Send the request to Burp Repeater.
+
+Modify sender_id to another user’s account and set a transfer amount.
+
+Send the request and observe a successful transfer.
+
+Impact Analysis
+
+An attacker can:
+
+Steal funds from other users
+
+Cause direct financial loss
+
+Abuse trust and bypass authorization controls
+
+CVSS 3.1 Base Score
+
+8.6 – High
+
+CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:H
+
+Risk Rating
+
+High
+
+Remediation
+
+Enforce strict server-side authorization on transfer operations
+
+Derive the sender account from the authenticated session (not client input)
+
+Validate ownership for all account identifiers
+
+Implement transaction integrity checks and logging
+
+Evidence
+
+Burp Repeater screenshot showing modified sender_id
+
+Server response confirming successful transfer
+
+
+
+
+VULN 18
+Vulnerability Name
+
+Insecure Direct Object Reference (IDOR) – Unauthorized Address Modification
+
+Description
+
+The application allows users to update address records by specifying a client-controlled addressID parameter. The server does not verify whether the authenticated user owns the referenced address. By modifying this identifier, an attacker can update address information belonging to other users without authorization.
+
+Affected Endpoint
+POST /lab/idor/address-entry/
+
+Proof of Concept (PoC)
+
+Modified Request Parameters:
+
+address=HACKED_BY_IDOR
+addressID=2
+update=
+
+
+Observation:
+
+The request is processed successfully
+
+No authorization error is returned
+
+Backend accepts updates for address records not owned by the authenticated user
+
+This confirms an IDOR vulnerability even though victim data is not displayed in the attacker’s UI.
+
+Steps to Reproduce
+
+Login as a normal user.
+
+Navigate to the Address Entry page.
+
+Intercept the update request using Burp Suite.
+
+Modify the addressID parameter to another user’s ID.
+
+Send the request.
+
+Observe that the server processes the request without authorization checks.
+
+Impact Analysis
+
+An attacker can:
+
+Modify other users’ personal address information
+
+Corrupt or tamper with sensitive user data
+
+Cause privacy violations and data integrity issues
+
+CVSS 3.1 Base Score
+
+7.7 – High
+
+CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:H/A:N
+
+Risk Rating
+
+High
+
+Remediation
+
+Enforce server-side ownership validation for address records
+
+Derive object ownership from the authenticated session
+
+Reject requests where the user does not own the referenced object
+
+Avoid exposing direct object identifiers
+
+Evidence
+
+Burp Repeater screenshot showing modified addressID
+
+Server response confirming successful processing without authorization error
+
+
+
+vuln19
+Vulnerability Name
+
+Insecure Direct Object Reference (IDOR) – Unauthorized Profile Information Modification
+
+Description
+
+The application allows users to update profile (“About”) information by referencing a user identifier supplied by the client. The server does not verify whether the authenticated user is authorized to modify the specified user profile. By altering the user_id parameter, an attacker can update profile information belonging to another user without permission.
+
+Affected Endpoint
+POST /lab/idor/about/
+
+Proof of Concept (PoC)
+Modified Request Parameters
+user_id=4
+
+
+(Other profile fields supplied normally)
+
+Result
+
+The server accepts the request and applies profile changes to user ID 4, even though the authenticated user does not own that profile. No authorization error is returned.
+
+Steps to Reproduce
+
+Login as a normal authenticated user.
+
+Navigate to the About / Profile page.
+
+Submit a profile update request and intercept it using Burp Suite.
+
+Send the request to Burp Repeater.
+
+Modify the user_id parameter to 4.
+
+Send the request.
+
+Observe that the profile update is processed successfully for another user.
+
+Impact Analysis
+
+An attacker can:
+
+Modify other users’ profile information
+
+Deface user accounts
+
+Corrupt personal data
+
+Perform social engineering or impersonation attacks
+
+CVSS 3.1 Base Score
+
+7.7 – High
+
+CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:H/A:N
+
+Risk Rating
+
+High
+
+Remediation
+
+Enforce strict server-side authorization checks on profile updates
+
+Ensure users can modify only their own profiles
+
+Derive user identity from the authenticated session, not client input
+
+Avoid using predictable numeric identifiers for sensitive objects
+
+Evidence
+
+Burp Repeater screenshot showing modified user_id=4
+
+Server response confirming successful profile update without authorization error
+
+
+
+vuln 20
+Vulnerability Name
+
+Insecure Direct Object Reference (IDOR) – Unauthorized Cart Manipulation
+
+Description
+
+The shopping cart functionality relies on client-supplied object references to add products. The application does not validate whether the requested product reference is authorized for the current user. By modifying encoded request parameters, arbitrary products can be added to the cart, enabling business logic abuse including free or unauthorized purchases.
+
+Affected Endpoint
+GET /lab/idor/shopping-cart/add.php
+
+Proof of Concept
+
+Intercepted cart addition request
+
+Modified encoded product identifier parameter
+
+Server accepted the request without authorization checks
+
+Impact
+
+Unauthorized product purchases
+
+Financial loss
+
+Inventory manipulation
+
+Business logic bypass
+
+CVSS 3.1
+CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N
+
+Remediation
+
+Enforce server-side validation of cart contents
+
+Do not trust client-supplied object references
+
+Validate product ownership and pricing at checkout
+
+Use integrity checks or server-generated cart tokens
+screenshot- 20

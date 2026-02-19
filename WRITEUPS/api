@@ -1,0 +1,96 @@
+vuln 50
+Vulnerability Name
+
+Broken Object Level Authorization (BOLA) / Excessive Data Exposure via API
+
+Description
+
+The application exposes internal API endpoints without proper authorization checks. By directly accessing an API endpoint, an attacker can retrieve sensitive information such as admin user ID and credentials. Using this information, privileged API actions (like deleting files) can be performed without authentication or authorization.
+
+This is a classic Broken Access Control issue in APIs.
+
+Proof of Concept (PoC)
+Step 1: Enumerate the API
+
+While analyzing application behavior, the following endpoint was discovered by modifying the URL path:
+
+GET /api/users.json
+
+Step 2: Access Sensitive Data
+
+The endpoint returned sensitive user data, including:
+
+Admin user ID
+
+Admin credentials / privileged identifiers
+
+No authentication or authorization token was required.
+
+Step 3: Abuse Admin Privileges
+
+Using the retrieved admin user ID, a privileged API request was crafted to delete a restricted file.
+
+Example action:
+
+Target file: delete_me.jpg
+
+Action performed: DELETE
+
+Result: File successfully deleted
+
+This confirms full privilege abuse via API.
+
+Impact Analysis
+
+Unauthorized access to admin-level data
+
+Exposure of sensitive credentials and identifiers
+
+Ability to perform destructive actions (file deletion)
+
+Complete compromise of application integrity
+
+High risk of data loss and privilege escalation
+
+CVSS 3.1 Base Score
+
+CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+Base Score: 9.8 (Critical)
+
+Risk Rating
+
+Critical
+
+Root Cause
+
+Missing authentication on API endpoints
+
+No authorization checks for sensitive resources
+
+Direct object references exposed via predictable API paths
+
+Excessive data exposure in API responses
+
+Remediation / Mitigation
+
+Enforce authentication on all API endpoints
+
+Implement strict role-based access control (RBAC)
+
+Do not expose sensitive user data (IDs, credentials) in API responses
+
+Validate user permissions before performing destructive actions
+
+Use access tokens (JWT/OAuth) and server-side authorization checks
+
+Screenshots / Evidence to Attach
+
+API response showing admin user details (/api/users.json)
+
+Request demonstrating file deletion using admin ID
+
+Successful deletion confirmation of delete_me.jpg
+
+
+
+

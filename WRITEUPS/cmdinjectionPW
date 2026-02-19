@@ -1,0 +1,363 @@
+Vulnerability 21-
+
+OS Command Injection – Ping Functionality
+
+Description
+
+The application takes user-supplied input for an IP address and directly concatenates it into a system-level ping command without proper validation or sanitization. This allows an attacker to append arbitrary OS commands and achieve command execution on the server.
+
+Affected Endpoint
+/lab/command-injection/send-ping/
+
+Proof of Concept (PoC)
+Payload Used
+;id
+
+Injection Point
+
+IP address input field in Send Ping functionality.
+
+Observed Result
+
+The server executed the injected OS command and returned:
+
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+
+This confirms arbitrary command execution under the web server user context.
+
+Steps to Reproduce
+
+Navigate to Command Injection → Send Ping.
+
+Enter a valid IP followed by the payload ;id.
+
+Submit the request.
+
+Observe command execution output in the response.
+
+Impact Analysis
+
+Successful exploitation allows an attacker to execute arbitrary operating system commands with the privileges of the web server user (www-data). This can lead to:
+
+Full server compromise
+
+Sensitive data disclosure
+
+Privilege escalation
+
+Malware installation
+
+Lateral movement within the infrastructure
+
+CVSS 3.1 Base Score
+
+9.8 (Critical)
+
+Vector:
+
+CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+
+Risk Rating
+
+Critical
+
+Remediation / Mitigation
+
+Do not pass user input directly to OS commands.
+
+Use safe APIs instead of system calls where possible.
+
+Strictly validate input using allowlists (e.g., IP address regex).
+
+Escape shell arguments using secure functions.
+
+Run services with the least privilege.
+
+Implement monitoring for command execution abuse.
+
+Screenshot Evidence
+
+Include screenshot showing:
+
+Injected payload
+
+Returned output (uid=33(www-data))
+
+
+
+
+VULN 22
+Vulnerability
+
+OS Command Injection – Filter Bypass (Send Ping – Filtered)
+
+Description
+
+The application attempts to restrict command injection by filtering common command separators. However, insufficient input validation allows alternative command chaining operators to bypass the filter. As a result, arbitrary OS commands can still be executed on the server.
+
+Affected Endpoint
+/lab/command-injection/send-ping-filter/
+
+Proof of Concept (PoC)
+Payload Used
+||id
+
+Injection Point
+
+IP address input field in Send Ping (Filtered) functionality.
+
+Observed Result
+
+The injected command executed successfully and returned:
+
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+
+This confirms that input filtering is inadequate and command injection is still possible.
+
+Steps to Reproduce
+
+Navigate to Command Injection → Send Ping (Filtered).
+
+Enter a valid IP followed by the payload ||id.
+
+Submit the request.
+
+Observe execution of the OS command in the response.
+
+Impact Analysis
+
+An attacker can bypass implemented input filters and execute arbitrary system commands under the web server user (www-data). This can lead to:
+
+Complete server compromise
+
+Sensitive file access
+
+Remote code execution
+
+Privilege escalation
+
+Persistent malware installation
+
+CVSS 3.1 Base Score
+
+9.8 (Critical)
+
+Vector:
+
+CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+
+Risk Rating
+
+Critical
+
+Remediation / Mitigation
+
+Do not rely on blacklist-based filtering.
+
+Avoid executing OS commands using user input.
+
+Enforce strict allowlist validation for IP addresses.
+
+Use secure command execution libraries or APIs.
+
+Apply proper escaping of shell arguments.
+
+Run services with minimal privileges.
+
+Screenshot Evidence
+
+Include screenshot showing:
+
+Payload submission
+
+Command output (uid=33(www-data))
+
+
+
+VULN 23 
+
+Vulnerability
+
+OS Command Injection – Stock Control Endpoint
+
+Description
+
+The Stock Control functionality uses a user-supplied product_id parameter to execute a backend command for checking inventory. The application fails to properly validate or sanitize this parameter, allowing attackers to append arbitrary OS commands to the original system call.
+
+Affected Endpoint
+/lab/command-injection/stock-check/?product_id=<input>
+
+Proof of Concept (PoC)
+Payload Used
+1;id
+
+Full Exploited URL
+http://localhost:1337/lab/command-injection/stock-check/?product_id=1;id
+
+Observed Result
+
+The response included both legitimate stock output and OS command execution output:
+
+Stock: 13
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+Pieces
+
+
+This confirms arbitrary command execution on the server.
+
+Steps to Reproduce
+
+Navigate to Command Injection → Stock Control.
+
+Modify the product_id parameter in the URL.
+
+Append the payload ;id to the parameter value.
+
+Observe OS command output appended to the stock response.
+
+Impact Analysis
+
+Successful exploitation allows attackers to execute arbitrary operating system commands under the web server context (www-data). This can lead to:
+
+Full system compromise
+
+Unauthorized data access
+
+Remote code execution
+
+Privilege escalation
+
+Service disruption
+
+CVSS 3.1 Base Score
+
+9.8 (Critical)
+
+Vector:
+
+CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+
+Risk Rating
+
+Critical
+
+Remediation / Mitigation
+
+Never concatenate user input into OS commands.
+
+Replace system calls with secure APIs or internal logic.
+
+Strictly validate input using allowlists (e.g., numeric-only product IDs).
+
+Escape shell arguments using safe libraries.
+
+Apply least-privilege execution for backend services.
+
+Screenshot Evidence
+
+Include a screenshot showing:
+
+Modified URL with injected payload
+
+Combined stock output and id command execution result
+
+
+
+VULN 24
+Vulnerability
+
+Blind OS Command Injection – User-Agent Header
+
+Description
+
+The application processes HTTP headers without proper validation and passes the User-Agent header value into an underlying operating system command. Although command output is not returned in the HTTP response, arbitrary command execution is confirmed through time-based behavior, indicating a blind command injection vulnerability.
+
+Affected Endpoint
+/lab/command-injection/blind/
+
+Injection Point
+
+HTTP Header:
+
+User-Agent
+
+Proof of Concept (PoC)
+Payload Used
+; sleep 10
+
+Method
+
+The payload was injected into the User-Agent HTTP header using Burp Suite.
+
+Observed Behavior
+
+Normal request: immediate response
+
+Injected request: response delayed by ~10 seconds
+
+This confirms that the injected command was executed on the server, even though no output was displayed.
+
+Steps to Reproduce
+
+Intercept the request using Burp Suite.
+
+Modify the User-Agent header to include:
+
+; sleep 10
+
+
+Forward the request.
+
+Observe a significant response delay compared to the baseline request.
+
+Impact Analysis
+
+Blind command injection allows attackers to execute arbitrary OS commands without direct output. This can still lead to:
+
+Full server compromise
+
+Data exfiltration via time-based inference
+
+Remote code execution
+
+Privilege escalation
+
+Persistence on the host
+
+Even without visible output, this vulnerability is highly critical.
+
+CVSS 3.1 Base Score
+
+9.8 (Critical)
+
+Vector:
+
+CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+
+Risk Rating
+
+Critical
+
+Remediation / Mitigation
+
+Never pass HTTP header values to OS commands.
+
+Sanitize and validate all user-controlled headers.
+
+Use secure APIs instead of shell execution.
+
+Implement strict allowlists.
+
+Apply least-privilege execution for backend processes.
+
+Monitor for abnormal request execution times.
+
+Screenshot Evidence
+
+Include:
+
+Burp request showing User-Agent: ; sleep 10
+
+Comparison of normal vs delayed response timing

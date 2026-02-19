@@ -1,0 +1,176 @@
+vuln 48
+Vulnerability Name
+
+CAPTCHA Bypass via CAPTCHA Reuse
+
+Description
+
+The application implements a CAPTCHA mechanism to prevent automated submissions. However, the CAPTCHA value remains valid even after successful verification. An attacker can reuse a previously solved CAPTCHA token to submit unlimited requests, effectively bypassing CAPTCHA protection.
+
+Proof of Concept (PoC)
+
+Open the CAPTCHA-protected form.
+
+Solve the CAPTCHA once and submit a valid request.
+
+Intercept the request using Burp Suite and send it to Repeater.
+
+Modify only the user_comment parameter.
+
+Reuse the same captcha value.
+
+Send the request multiple times.
+
+Observed Result:
+Each request returns HTTP 302 Found, confirming successful submission without solving a new CAPTCHA.
+
+Example Request:
+
+POST /lab/captcha-bypass/broken-captcha HTTP/1.1
+
+user_comment=Hacked&captcha=NE4655
+
+Impact Analysis
+
+CAPTCHA protection can be completely bypassed
+
+Enables automated spam, brute-force attacks, and abuse
+
+Defeats bot-mitigation controls
+
+Increases risk of DoS, credential stuffing, and form abuse
+
+CVSS 3.1 Score
+
+CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+Base Score: 5.3 (Medium)
+
+(You can justify Medium because it impacts integrity, not direct data loss.)
+
+Risk Severity
+
+Medium
+
+Root Cause
+
+CAPTCHA value is not invalidated after successful verification
+
+CAPTCHA token remains reusable across multiple requests
+
+Remediation / Mitigation
+
+Invalidate CAPTCHA token immediately after successful use
+
+Bind CAPTCHA to:
+
+Session
+
+Single request
+
+Timestamp
+
+Implement server-side CAPTCHA regeneration
+
+Add rate limiting and request throttling
+
+Secure Example:
+
+unset($_SESSION['captcha']);
+
+Screenshots / Evidence
+
+Burp Repeater showing repeated 302 Found
+
+Same CAPTCHA value reused successfully
+
+Modified user_comment with unchanged captcha
+
+What to screenshot (important)
+
+Take one screenshot showing:
+
+Burp Repeater
+
+Same captcha value
+
+Multiple successful responses (302 / 200)
+
+
+
+vuln 49 
+Vulnerability Name
+
+CAPTCHA Bypass via Client-Side Manipulation (Logic Flaw)
+
+Description
+
+The application uses a CAPTCHA mechanism based on simple arithmetic values submitted by the client. The server trusts CAPTCHA operands and results provided in the HTTP request instead of validating them securely on the server side. As a result, an attacker can arbitrarily modify the CAPTCHA parameters and submit a forged correct answer, bypassing CAPTCHA validation entirely.
+
+Proof of Concept (PoC)
+
+Open the CAPTCHA-protected form.
+
+Intercept the submission request using Burp Suite.
+
+Observe CAPTCHA-related parameters in the request (e.g., numbers and result).
+
+Modify the CAPTCHA operands and result to any values that satisfy the calculation.
+
+Forward the modified request.
+
+Example Manipulation:
+
+captcha_num1=1
+captcha_num2=1
+captcha_result=2
+
+
+Submit the request.
+
+Observed Result:
+The server accepts the request and returns a success response, confirming CAPTCHA bypass.
+
+Impact Analysis
+
+CAPTCHA protection is completely ineffective
+
+Allows automated submissions without solving real challenges
+
+Enables spam, brute-force attempts, and abuse of application functionality
+
+Weakens overall application security controls
+
+CVSS 3.1 Base Score
+
+CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+Base Score: 5.3 (Medium)
+
+Risk Severity
+
+Medium
+
+Root Cause
+
+CAPTCHA logic is calculated using client-supplied values
+
+No server-side verification of CAPTCHA challenge integrity
+
+Application assumes CAPTCHA parameters sent by client are trustworthy
+
+Remediation / Mitigation
+
+Perform CAPTCHA generation and validation entirely on the server
+
+Do not accept CAPTCHA operands or results from client input
+
+Use secure CAPTCHA libraries (Google reCAPTCHA, hCaptcha, etc.)
+
+Bind CAPTCHA to session and invalidate after use
+
+Screenshots / Evidence
+
+Burp Suite request showing modified CAPTCHA values
+
+Successful server response after manipulation
+
+No CAPTCHA regeneration or validation failure observed
